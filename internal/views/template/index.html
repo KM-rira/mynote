@@ -18,38 +18,77 @@
             text-align: left;
             cursor: pointer;
         }
+        th.id-column, td.id-column {
+            width: 50px;
+        }
+        th.title-column, td.title-column {
+            max-width: 100px; /* 約10文字程度の幅に設定 */
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            font-size: 16px;
+            resize: none;
+            overflow: hidden;
+        }
+        textarea {
+            min-height: 40px;
+            max-height: 300px;
+        }
+        .auto-resize {
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+            resize: none;
+        }
     </style>
 </head>
 <body>
     <h1>Notes</h1>
-    <form action="/update" method="post">
+    <form action="/add" method="post">
+        <input type="text" name="title" placeholder="Title" required>
+        <textarea name="content" placeholder="Content" required></textarea>
+        <input type="text" name="category" placeholder="Category">
+        <label>
+            Important
+            <input type="checkbox" name="important">
+        </label>
+        <button type="submit">Add Note</button>
+    </form>
+    <form action="/delete" method="post" id="deleteForm">
         <table id="notesTable">
             <thead>
                 <tr>
                     <th>Select</th>
-                    <th onclick="sortTable(1, 'int')">ID</th>
-                    <th onclick="sortTable(2, 'string')">Title</th>
-                    <th onclick="sortTable(3, 'string')">Content</th>
-                    <th onclick="sortTable(4, 'string')">Category</th>
-                    <th onclick="sortImportant()">Important</th>
-                    <th onclick="sortTable(6, 'date')">Updated At</th>
+                    <th class="id-column" onclick="sortTable(1, 'int')">ID</th>
+                    <th class="title-column" onclick="sortTable(2, 'string')">Title</th>
+                    <th class="title-column" onclick="sortTable(3, 'string')">Content</th>
+                    <th class="title-column" onclick="sortTable(4, 'string')">Category</th>
+                    <th class="title-column" onclick="sortImportant()">Important</th>
+                    <th class="title-column" onclick="sortDateColumn(6)">Updated At</th>
                 </tr>
             </thead>
             <tbody>
                 {{range .}}
                 <tr>
                     <td><input type="checkbox" name="select" value="{{.ID}}"></td>
-                    <td><input type="text" name="id" value="{{.ID}}" readonly></td>
-                    <td><input type="text" name="title" value="{{.Title}}"></td>
-                    <td><input type="text" name="content" value="{{.Content}}"></td>
-                    <td><input type="text" name="category" value="{{.Category}}"></td>
-                    <td><input type="checkbox" name="important" {{if .ImportantFlag}}checked{{end}}></td>
-                    <td>{{.UpdatedAt.Format "2006-01-02 15:04:05"}}</td>
+                    <td class="id-column">{{.ID}}</td>
+                    <td class="title-column auto-resize">{{.Title}}</td>
+                    <td class="auto-resize">{{.Content}}</td>
+                    <td class="auto-resize">{{.Category}}</td>
+                    <td><input type="checkbox" disabled {{if .ImportantFlag}}checked{{end}}></td>
+                    <td data-date="{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}">{{.UpdatedAt.Format "2006-01-02 15:04:05 MST"}}</td>
                 </tr>
                 {{end}}
             </tbody>
         </table>
-        <button type="submit">Update</button>
+        <button type="submit">Delete Selected</button>
     </form>
 
     <script>
@@ -60,8 +99,8 @@
             table.setAttribute("data-sort-direction", direction);
 
             rows.sort(function(a, b) {
-                var x = a.cells[columnIndex].children[0].value || a.cells[columnIndex].textContent;
-                var y = b.cells[columnIndex].children[0].value || b.cells[columnIndex].textContent;
+                var x = a.cells[columnIndex].dataset.date || a.cells[columnIndex].textContent;
+                var y = b.cells[columnIndex].dataset.date || b.cells[columnIndex].textContent;
 
                 if (dataType === "int") {
                     x = parseInt(x, 10);
@@ -78,6 +117,29 @@
                     return x > y ? 1 : -1;
                 } else {
                     return x < y ? 1 : -1;
+                }
+            });
+
+            var tbody = table.getElementsByTagName("tbody")[0];
+            rows.forEach(function(row) {
+                tbody.appendChild(row);
+            });
+        }
+
+        function sortDateColumn(columnIndex) {
+            var table = document.getElementById("notesTable");
+            var rows = Array.from(table.rows).slice(1); // Skip header row
+            var direction = table.getAttribute("data-sort-date-direction") === "asc" ? "desc" : "asc";
+            table.setAttribute("data-sort-date-direction", direction);
+
+            rows.sort(function(a, b) {
+                var x = new Date(a.cells[columnIndex].dataset.date);
+                var y = new Date(b.cells[columnIndex].dataset.date);
+
+                if (direction === "asc") {
+                    return x - y;
+                } else {
+                    return y - x;
                 }
             });
 
@@ -109,6 +171,23 @@
                 tbody.appendChild(row);
             });
         }
+
+        function autoResize(element) {
+            element.style.height = "auto";
+            element.style.height = (element.scrollHeight) + "px";
+        }
+
+        document.addEventListener("input", function(event) {
+            if (event.target.tagName.toLowerCase() === "textarea" || event.target.tagName.toLowerCase() === "input" && event.target.type === "text") {
+                autoResize(event.target);
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelectorAll('.auto-resize').forEach(function(element) {
+                autoResize(element);
+            });
+        });
     </script>
 </body>
 </html>

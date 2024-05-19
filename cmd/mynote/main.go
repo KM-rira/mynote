@@ -6,7 +6,9 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -30,12 +32,18 @@ func main() {
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 
-	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
+	loc := url.QueryEscape("Asia/Tokyo")
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&loc=%s", dbUser, dbPassword, dbHost, dbPort, dbName, loc)
 	db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	jst, err := time.LoadLocation("Asia/Tokyo")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("access /")
@@ -57,20 +65,19 @@ func main() {
 		var notes []Note
 		for rows.Next() {
 			var note Note
-			var updatedAtStr []uint8
+			var updatedAtStr string
 			if err := rows.Scan(&note.ID, &note.Title, &note.Content, &note.Category, &note.ImportantFlag, &updatedAtStr); err != nil {
 				http.Error(w, "Failed to scan row", http.StatusInternalServerError)
 				log.Println("Failed to scan row:", err)
 				return
 			}
-			// updatedAtStr を time.Time に変換
-			updatedAt, err := time.Parse("2006-01-02 15:04:05", string(updatedAtStr))
+			updatedAt, err := time.Parse(time.RFC3339, updatedAtStr)
 			if err != nil {
 				http.Error(w, "Failed to parse updated_at", http.StatusInternalServerError)
 				log.Println("Failed to parse updated_at:", err)
 				return
 			}
-			note.UpdatedAt = updatedAt
+			note.UpdatedAt = updatedAt.In(jst)
 			notes = append(notes, note)
 		}
 
@@ -86,6 +93,46 @@ func main() {
 		}
 	})
 
+	http.HandleFunc("/add", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("access /add")
+		title := r.FormValue("title")
+		content := r.FormValue("content")
+		category := r.FormValue("category")
+		important := r.FormValue("important") == "on"
+
+		_, err := db.Exec("INSERT INTO note (title, content, category, important_flag) VALUES (?, ?, ?, ?)", title, content, category, important)
+		if err != nil {
+			http.Error(w, "Failed to insert note", http.StatusInternalServerError)
+			log.Println("Failed to insert note:", err)
+			return
+		}
+
+		http.Redirect(w, r, "/index", http.StatusSeeOther)
+	})
+	http.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("access /delete")
+		if r.Method != http.MethodPost {
+			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+			return
+		}
+
+		r.ParseForm()
+		ids := r.Form["select"]
+		if len(ids) == 0 {
+			http.Redirect(w, r, "/index", http.StatusSeeOther)
+			return
+		}
+
+		query := fmt.Sprintf("DELETE FROM note WHERE id IN (%s)", strings.Join(ids, ","))
+		_, err := db.Exec(query)
+		if err != nil {
+			http.Error(w, "Failed to delete notes", http.StatusInternalServerError)
+			log.Println("Failed to delete notes:", err)
+			return
+		}
+
+		http.Redirect(w, r, "/index", http.StatusSeeOther)
+	})
 	if err := http.ListenAndServe(":8081", nil); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
