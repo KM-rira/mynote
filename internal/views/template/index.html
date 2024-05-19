@@ -31,7 +31,7 @@
                     <th onclick="sortTable(2, 'string')">Title</th>
                     <th onclick="sortTable(3, 'string')">Content</th>
                     <th onclick="sortTable(4, 'string')">Category</th>
-                    <th>Important</th>
+                    <th onclick="sortImportant()">Important</th>
                     <th onclick="sortTable(6, 'date')">Updated At</th>
                 </tr>
             </thead>
@@ -86,7 +86,29 @@
                 tbody.appendChild(row);
             });
         }
+
+        function sortImportant() {
+            var table = document.getElementById("notesTable");
+            var rows = Array.from(table.rows).slice(1); // Skip header row
+            var direction = table.getAttribute("data-sort-important-direction") === "asc" ? "desc" : "asc";
+            table.setAttribute("data-sort-important-direction", direction);
+
+            rows.sort(function(a, b) {
+                var x = a.cells[5].children[0].checked;
+                var y = b.cells[5].children[0].checked;
+
+                if (direction === "asc") {
+                    return x === y ? 0 : x ? -1 : 1;
+                } else {
+                    return x === y ? 0 : x ? 1 : -1;
+                }
+            });
+
+            var tbody = table.getElementsByTagName("tbody")[0];
+            rows.forEach(function(row) {
+                tbody.appendChild(row);
+            });
+        }
     </script>
 </body>
 </html>
-
