@@ -36,10 +36,12 @@ func main() {
 	defer db.Close()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("access /")
 		fmt.Fprintf(w, "Hello, World!")
 	})
 
 	http.HandleFunc("/index", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("access /index")
 		// データの取得
 		rows, err := db.Query("SELECT * FROM note")
 		if err != nil {
@@ -65,7 +67,7 @@ func main() {
 		}
 
 		// HTML表示
-		tmpl := template.Must(template.ParseFiles("index.html"))
+		tmpl := template.Must(template.ParseFiles("./template/index.html"))
 		if err := tmpl.Execute(w, notes); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

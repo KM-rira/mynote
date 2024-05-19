@@ -24,7 +24,7 @@ WORKDIR /root/
 # ビルドした実行ファイルをAlpineコンテナにコピー
 COPY --from=builder /app/mynote .
 
-COPY ./internal/views/template/index.html .
+COPY ./internal/views/template ./template
 
 # コンテナが起動したときに実行されるコマンド
 CMD ["./mynote"]
