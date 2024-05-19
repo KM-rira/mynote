@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -17,6 +18,7 @@ type Note struct {
 	Content       string
 	Category      string
 	ImportantFlag bool
+	UpdatedAt     time.Time
 }
 
 func main() {
@@ -45,6 +47,7 @@ func main() {
 		// データの取得
 		rows, err := db.Query("SELECT * FROM note")
 		if err != nil {
+			fmt.Println(err)
 			http.Error(w, "Failed to execute query", http.StatusInternalServerError)
 			return
 		}
@@ -54,10 +57,20 @@ func main() {
 		var notes []Note
 		for rows.Next() {
 			var note Note
-			if err := rows.Scan(&note.ID, &note.Title, &note.Content, &note.Category, &note.ImportantFlag); err != nil {
+			var updatedAtStr []uint8
+			if err := rows.Scan(&note.ID, &note.Title, &note.Content, &note.Category, &note.ImportantFlag, &updatedAtStr); err != nil {
 				http.Error(w, "Failed to scan row", http.StatusInternalServerError)
+				log.Println("Failed to scan row:", err)
 				return
 			}
+			// updatedAtStr を time.Time に変換
+			updatedAt, err := time.Parse("2006-01-02 15:04:05", string(updatedAtStr))
+			if err != nil {
+				http.Error(w, "Failed to parse updated_at", http.StatusInternalServerError)
+				log.Println("Failed to parse updated_at:", err)
+				return
+			}
+			note.UpdatedAt = updatedAt
 			notes = append(notes, note)
 		}
 

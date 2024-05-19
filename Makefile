@@ -11,4 +11,8 @@ start:
 down:
 	docker compose down
 
+.PHONY: downv
+downv:
+	docker compose down -v
+
 
