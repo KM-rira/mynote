@@ -128,9 +128,9 @@ func main() {
 		note.Category = r.FormValue("category")
 		note.Important = r.FormValue("important") == "on"
 
-		_, err = db.Exec("UPDATE note SET title = ?, contents = ?, category = ?, important = ?, updated_at = NOW() WHERE id = ?", note.Title, note.Contents, note.Category, note.Important, note.ID)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		result := gormDb.Model(&note).Updates(Note{Title: note.Title, Contents: note.Contents, Category: note.Category, Important: note.Important})
+		if result.Error != nil {
+			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
 			return
 		}
 
