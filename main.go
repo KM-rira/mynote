@@ -11,6 +11,8 @@ import (
 	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
+	gormMysql "gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 type Note struct {
@@ -23,7 +25,9 @@ type Note struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-// nl2br converts newline characters to <br> tags
+func (Note) TableName() string {
+	return "note"
+}
 
 func main() {
 	// Load environment variables
@@ -40,6 +44,10 @@ func main() {
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatalf("Error opening database: %s", err.Error())
+	}
+	gormDb, err := gorm.Open(gormMysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Failed to connect to database: ", err)
 	}
 	defer db.Close()
 
@@ -58,28 +66,16 @@ func main() {
 	// HTTP handler
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("/ Received request")
-		rows, err := db.Query("SELECT id, title, contents, category, important, created_at, updated_at FROM note ORDER BY updated_at DESC")
-		if err != nil {
-			log.Printf("Error querying database: %s", err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer rows.Close()
 
 		var notes []Note
-		for rows.Next() {
-			var note Note
-			if err := rows.Scan(&note.ID, &note.Title, &note.Contents, &note.Category, &note.Important, &note.CreatedAt, &note.UpdatedAt); err != nil {
-				log.Printf("Error scanning row: %s", err.Error())
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			notes = append(notes, note)
+		result := gormDb.Order("updated_at DESC").Find(&notes)
+		if result.Error != nil {
+			http.Error(w, result.Error.Error(), http.StatusInsufficientStorage)
+			return
 		}
 
-		if err := rows.Err(); err != nil {
-			log.Printf("Error with rows: %s", err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if result.RowsAffected == 0 {
+			fmt.Fprintln(w, "No note record")
 			return
 		}
 
