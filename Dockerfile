@@ -27,7 +27,7 @@ WORKDIR /root/
 COPY --from=build /app/main .
 
 # Copy static files to the appropriate directory
-COPY ./templates /root/templates
+COPY ./internal/templates /root/templates
 
 # Command to run the executable
 CMD ["./main"]
