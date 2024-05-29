@@ -6,30 +6,16 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"mynote/internal/model"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	gormMysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
-
-type Note struct {
-	ID        int       `gorm:"primaryKey"`
-	Title     string    `json:"title"`
-	Contents  string    `json:"contents"`
-	Category  string    `json:"category"`
-	Important bool      `json:"important"`
-	CreatedAt time.Time `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
-}
-
-func (Note) TableName() string {
-	return "note"
-}
 
 func main() {
 	// Load environment variables
@@ -69,7 +55,7 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("/ Received request")
 
-		var notes []Note
+		var notes []model.Note
 		result := gormDb.Order("updated_at DESC").Find(&notes)
 		if result.Error != nil {
 			http.Error(w, result.Error.Error(), http.StatusInsufficientStorage)
@@ -95,7 +81,7 @@ func main() {
 		log.Println("/select Received request")
 		id := r.URL.Query().Get("id")
 
-		var note Note
+		var note model.Note
 
 		result := gormDb.First(&note, id)
 		if result.Error != nil {
@@ -113,7 +99,7 @@ func main() {
 			return
 		}
 
-		var note Note
+		var note model.Note
 		err := r.ParseForm()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -130,7 +116,7 @@ func main() {
 		note.Category = r.FormValue("category")
 		note.Important = r.FormValue("important") == "on"
 
-		result := gormDb.Model(&note).Updates(Note{Title: note.Title, Contents: note.Contents, Category: note.Category, Important: note.Important})
+		result := gormDb.Model(&note).Updates(model.Note{Title: note.Title, Contents: note.Contents, Category: note.Category, Important: note.Important})
 		if result.Error != nil {
 			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
 			return
@@ -152,7 +138,7 @@ func main() {
 			return
 		}
 
-		var note Note
+		var note model.Note
 		err := json.NewDecoder(r.Body).Decode(&note)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -185,7 +171,7 @@ func main() {
 			return
 		}
 
-		result := gormDb.Delete(&Note{}, requestData.ID)
+		result := gormDb.Delete(&model.Note{}, requestData.ID)
 		if result.Error != nil {
 			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
 			return
