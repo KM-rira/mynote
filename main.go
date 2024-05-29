@@ -85,6 +85,7 @@ func main() {
 		if err != nil {
 			log.Printf("Error rendering template: %s", err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 	})
 
@@ -93,9 +94,10 @@ func main() {
 		id := r.URL.Query().Get("id")
 
 		var note Note
-		err := db.QueryRow("SELECT id, title, contents, category, important, created_at, updated_at FROM note WHERE id = ?", id).Scan(&note.ID, &note.Title, &note.Contents, &note.Category, &note.Important, &note.CreatedAt, &note.UpdatedAt)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		result := gormDb.First(&note, id)
+		if result.Error != nil {
+			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
 			return
 		}
 
