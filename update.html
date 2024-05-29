@@ -25,8 +25,12 @@
             border-radius: 4px;
         }
         .delete-btn {
-            background-color: #f44336; /* Red background */
+            background-color: grey; /* Grey background when disabled */
             margin-left: 10px; /* Add space between buttons */
+            cursor: not-allowed; /* Change cursor when button is disabled */
+        }
+        .delete-checkbox {
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -46,11 +50,28 @@
         <label for="important">Important</label>
         <input type="checkbox" id="important" name="important" {{if .Important}}checked{{end}}>
 
+        <label for="confirm-delete" class="delete-checkbox">Confirm Delete</label>
+        <input type="checkbox" id="confirm-delete" onclick="toggleDeleteButton()">
+
         <button type="submit">Update</button>
-        <button type="button" class="delete-btn" onclick="deleteNote()">Delete</button>
+        <button type="button" class="delete-btn" id="delete-btn" onclick="deleteNote()" disabled>Delete</button>
     </form>
 
     <script>
+        function toggleDeleteButton() {
+            var confirmDelete = document.getElementById('confirm-delete');
+            var deleteBtn = document.getElementById('delete-btn');
+            if (confirmDelete.checked) {
+                deleteBtn.disabled = false;
+                deleteBtn.style.backgroundColor = '#f44336'; // Change to red when enabled
+                deleteBtn.style.cursor = 'pointer'; // Change cursor when button is enabled
+            } else {
+                deleteBtn.disabled = true;
+                deleteBtn.style.backgroundColor = 'grey'; // Change to grey when disabled
+                deleteBtn.style.cursor = 'not-allowed'; // Change cursor when button is disabled
+            }
+        }
+
         function deleteNote() {
             var id = document.getElementById('id').value;
             fetch('/delete', {
@@ -58,7 +79,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: id })
+                body: JSON.stringify({ id: parseInt(id, 10) }) // Ensure id is sent as an integer
             })
             .then(() => {
                 window.location.href = '/'; // Redirect to home page after deletion

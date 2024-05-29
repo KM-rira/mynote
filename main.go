@@ -169,6 +169,32 @@ func main() {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	})
 
+	http.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("/delete Received request")
+		if r.Method != http.MethodPost {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+
+		var requestData struct {
+			ID int `json:"id"`
+		}
+
+		err := json.NewDecoder(r.Body).Decode(&requestData)
+		if err != nil {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+
+		_, err = db.Exec("DELETE FROM note WHERE id = ?", requestData.ID)
+		if err != nil {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	})
+
 	log.Println("Server is running on port 8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatalf("Could not start server: %s", err.Error())
