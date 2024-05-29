@@ -58,7 +58,7 @@ func main() {
 	// HTTP handler
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("/ Received request")
-		rows, err := db.Query("SELECT id, title, contents, category, important, created_at, updated_at FROM note")
+		rows, err := db.Query("SELECT id, title, contents, category, important, created_at, updated_at FROM note ORDER BY updated_at DESC")
 		if err != nil {
 			log.Printf("Error querying database: %s", err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)

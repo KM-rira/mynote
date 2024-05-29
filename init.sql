@@ -1,4 +1,3 @@
--- init.sql
 CREATE DATABASE IF NOT EXISTS mynote_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 
 USE mynote_db;
@@ -11,7 +10,7 @@ CREATE TABLE IF NOT EXISTS note (
     important BOOLEAN,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;;
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- サンプルデータの挿入
 INSERT INTO note (title, contents, category, important, created_at, updated_at)
