@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -59,8 +60,8 @@ func main() {
 	}
 
 	// Template parsing
-	tmplIndex := template.Must(template.ParseFiles("index.html"))
-	tmplUpdate := template.Must(template.ParseFiles("update.html"))
+	tmplIndex := template.Must(template.ParseFiles(filepath.Join("templates", "index.html")))
+	tmplUpdate := template.Must(template.ParseFiles(filepath.Join("templates", "update.html")))
 
 	fmt.Println("Successfully connected to the database!")
 
@@ -140,7 +141,7 @@ func main() {
 
 	http.HandleFunc("/register-form", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("/register-form Received request")
-		tmplRegister := template.Must(template.ParseFiles("register.html"))
+		tmplRegister := template.Must(template.ParseFiles(filepath.Join("templates", "register.html")))
 		tmplRegister.Execute(w, nil)
 	})
 

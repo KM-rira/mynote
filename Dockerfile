@@ -26,10 +26,8 @@ WORKDIR /root/
 # Copy the Pre-built binary file from the build stage
 COPY --from=build /app/main .
 
-COPY ./index.html .
-COPY ./update.html .
-COPY ./register.html .
+# Copy static files to the appropriate directory
+COPY ./templates /root/templates
 
 # Command to run the executable
 CMD ["./main"]
-
