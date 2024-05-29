@@ -1,34 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"mynote/internal/database"
 	"mynote/internal/handlers"
 	"net/http"
-	"os"
 
 	_ "github.com/go-sql-driver/mysql"
-	gormMysql "gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
 func main() {
-	// Load environment variables
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
 
-	// Data Source Name with charset and parseTime
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local", dbUser, dbPassword, dbHost, dbPort, dbName)
-	db, err := gorm.Open(gormMysql.Open(dsn), &gorm.Config{})
+	db, err := database.InitDB()
 	if err != nil {
-		log.Fatal("Failed to connect to database: ", err)
+		log.Fatalf("Failed to connect to database: %v\n", err)
 	}
 
 	// ハンドラの初期化
-	handler := handlers.NewHandler(db)
+	handler := handlers.NewHandler(db.DB)
 
 	// ルートの定義
 	http.HandleFunc("/", handler.Index)
