@@ -1,16 +1,11 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/json"
 	"fmt"
-	"html/template"
 	"log"
-	"mynote/internal/model"
+	"mynote/internal/handlers"
 	"net/http"
 	"os"
-	"path/filepath"
-	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
 	gormMysql "gorm.io/driver/mysql"
@@ -27,158 +22,21 @@ func main() {
 
 	// Data Source Name with charset and parseTime
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local", dbUser, dbPassword, dbHost, dbPort, dbName)
-
-	// Open database connection
-	db, err := sql.Open("mysql", dsn)
-	if err != nil {
-		log.Fatalf("Error opening database: %s", err.Error())
-	}
-	gormDb, err := gorm.Open(gormMysql.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(gormMysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database: ", err)
 	}
-	defer db.Close()
 
-	// Check the connection
-	err = db.Ping()
-	if err != nil {
-		log.Fatalf("Error connecting to the database: %s", err.Error())
-	}
+	// ハンドラの初期化
+	handler := handlers.NewHandler(db)
 
-	// Template parsing
-	tmplIndex := template.Must(template.ParseFiles(filepath.Join("templates", "index.html")))
-	tmplUpdate := template.Must(template.ParseFiles(filepath.Join("templates", "update.html")))
-
-	fmt.Println("Successfully connected to the database!")
-
-	// HTTP handler
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("/ Received request")
-
-		var notes []model.Note
-		result := gormDb.Order("updated_at DESC").Find(&notes)
-		if result.Error != nil {
-			http.Error(w, result.Error.Error(), http.StatusInsufficientStorage)
-			return
-		}
-
-		if result.RowsAffected == 0 {
-			fmt.Fprintln(w, "No note record")
-			return
-		}
-
-		// Render the template with notes
-		log.Printf("Rendering template with notes: %+v", notes)
-		err = tmplIndex.Execute(w, notes)
-		if err != nil {
-			log.Printf("Error rendering template: %s", err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	})
-
-	http.HandleFunc("/select", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("/select Received request")
-		id := r.URL.Query().Get("id")
-
-		var note model.Note
-
-		result := gormDb.First(&note, id)
-		if result.Error != nil {
-			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		tmplUpdate.Execute(w, note)
-	})
-
-	http.HandleFunc("/update", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("/update Received request")
-		if r.Method != http.MethodPost {
-			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-			return
-		}
-
-		var note model.Note
-		err := r.ParseForm()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		note.ID, err = strconv.Atoi(r.FormValue("id"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		note.Title = r.FormValue("title")
-		note.Contents = r.FormValue("contents")
-		note.Category = r.FormValue("category")
-		note.Important = r.FormValue("important") == "on"
-
-		result := gormDb.Model(&note).Updates(model.Note{Title: note.Title, Contents: note.Contents, Category: note.Category, Important: note.Important})
-		if result.Error != nil {
-			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-	})
-
-	http.HandleFunc("/register-form", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("/register-form Received request")
-		tmplRegister := template.Must(template.ParseFiles(filepath.Join("templates", "register.html")))
-		tmplRegister.Execute(w, nil)
-	})
-
-	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("/register Received request")
-		if r.Method != http.MethodPost {
-			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-			return
-		}
-
-		var note model.Note
-		err := json.NewDecoder(r.Body).Decode(&note)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		result := gormDb.Create(&note)
-		if result.Error != nil {
-			log.Printf("note record create error: %v\n", result.Error)
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-	})
-
-	http.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("/delete Received request")
-		if r.Method != http.MethodPost {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
-
-		var requestData struct {
-			ID int `json:"id"`
-		}
-
-		err := json.NewDecoder(r.Body).Decode(&requestData)
-		if err != nil {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
-
-		result := gormDb.Delete(&model.Note{}, requestData.ID)
-		if result.Error != nil {
-			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-	})
+	// ルートの定義
+	http.HandleFunc("/", handler.Index)
+	http.HandleFunc("/register-form", handler.RegisterForm)
+	http.HandleFunc("/register", handler.Register)
+	http.HandleFunc("/select", handler.Select)
+	http.HandleFunc("/update", handler.Update)
+	http.HandleFunc("/delete", handler.Delete)
 
 	log.Println("Server is running on port 8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
