@@ -1,50 +1,34 @@
-# MySQLのベースイメージを使用
-FROM mysql:8.0 AS mysql
+# syntax=docker/dockerfile:1
 
-# タイムゾーンを設定
-ENV TZ=Asia/Tokyo
+# Build stage
+FROM golang:1.18-alpine AS build
 
-RUN apt-get update && apt-get install -y tzdata \
-    && cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
-    && echo "Asia/Tokyo" > /etc/timezone
-
-# 初期化スクリプトをコピー
-COPY ./init.sql /docker-entrypoint-initdb.d/
-
-# Goビルド環境をベースイメージとして使用
-FROM golang:1.21 AS builder
-
-# ワークディレクトリを設定
+# Set the Current Working Directory inside the container
 WORKDIR /app
 
-# go.mod と go.sum ファイルをコピー
-COPY go.mod .
-COPY go.sum .
+# Copy go mod and sum files
+COPY go.mod go.sum ./
 
-# 依存関係をダウンロード
+# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
 RUN go mod download
 
-# ソースコードをコピー
-COPY ./cmd/mynote ./cmd/mynote
+# Copy the source from the current directory to the Working Directory inside the container
+COPY . .
 
-# アプリケーションをビルド
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o mynote ./cmd/mynote/main.go
+# Build the Go app
+RUN go build -o main .
 
-# 新しいステージを開始し、Alpine Linuxイメージをベースとする
+# Run stage
 FROM alpine:latest
-
-# タイムゾーンを設定
-ENV TZ=Asia/Tokyo
-RUN apk add --no-cache tzdata \
-    && cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
-    && echo "Asia/Tokyo" > /etc/timezone
 
 WORKDIR /root/
 
-# ビルドした実行ファイルをAlpineコンテナにコピー
-COPY --from=builder /app/mynote .
+# Copy the Pre-built binary file from the build stage
+COPY --from=build /app/main .
 
-COPY ./internal/views/template ./template
+COPY ./index.html .
+COPY ./update.html .
 
-# コンテナが起動したときに実行されるコマンド
-CMD ["./mynote"]
+# Command to run the executable
+CMD ["./main"]
+
