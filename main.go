@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	gormMysql "gorm.io/driver/mysql"
@@ -16,13 +17,13 @@ import (
 )
 
 type Note struct {
-	ID        int    `json:"id"`
-	Title     string `json:"title"`
-	Contents  string `json:"contents"`
-	Category  string `json:"category"`
-	Important bool   `json:"important"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	ID        int       `gorm:"primaryKey"`
+	Title     string    `json:"title"`
+	Contents  string    `json:"contents"`
+	Category  string    `json:"category"`
+	Important bool      `json:"important"`
+	CreatedAt time.Time `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
 func (Note) TableName() string {
@@ -157,13 +158,12 @@ func main() {
 			return
 		}
 
-		_, err = db.Exec("INSERT INTO note (title, contents, category, important, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())",
-			note.Title, note.Contents, note.Category, note.Important)
-		if err != nil {
+		result := gormDb.Create(&note)
+		if result.Error != nil {
+			log.Printf("note record create error: %v\n", result.Error)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
-
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	})
 

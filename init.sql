@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS note (
     contents TEXT NOT NULL,
     category VARCHAR(255),
     important BOOLEAN,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    created_at DATETIME,
+    updated_at DATETIME
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 
 -- サンプルデータの挿入
