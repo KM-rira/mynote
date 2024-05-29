@@ -7,11 +7,11 @@ ip addr show eth0
 
 アドレスを取得する
 ```console
-# 172.18.48.1/20 の部分
+# XXX.XX.XX.X/XX の部分
 
 3: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
     link/ether 00:15:5d:00:4a:41 brd ff:ff:ff:ff:ff:ff
-    inet 172.18.48.1/20 brd 172.18.63.255 scope global eth0
+    inet XXX.XX.XX.X/XX brd 172.18.63.255 scope global eth0
        valid_lft forever preferred_lft forever
 ```
 
