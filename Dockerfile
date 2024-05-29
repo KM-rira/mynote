@@ -28,6 +28,7 @@ COPY --from=build /app/main .
 
 COPY ./index.html .
 COPY ./update.html .
+COPY ./register.html .
 
 # Command to run the executable
 CMD ["./main"]

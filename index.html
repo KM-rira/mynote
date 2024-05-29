@@ -33,10 +33,21 @@
             text-decoration: underline;
             cursor: pointer;
         }
+        .new-note-btn {
+            margin-left: 20px;
+            padding: 5px 10px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
-    <h1>Notes</h1>
+    <h1>Notes
+        <button class="new-note-btn" onclick="window.location.href='/register-form'">新規登録</button>
+    </h1>
     <table>
         <thead>
             <tr>

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -132,6 +133,36 @@ func main() {
 		_, err = db.Exec("UPDATE note SET title = ?, contents = ?, category = ?, important = ?, updated_at = NOW() WHERE id = ?", note.Title, note.Contents, note.Category, note.Important, note.ID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	})
+
+	http.HandleFunc("/register-form", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("/register-form Received request")
+		tmplRegister := template.Must(template.ParseFiles("register.html"))
+		tmplRegister.Execute(w, nil)
+	})
+
+	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
+		log.Println("/register Received request")
+		if r.Method != http.MethodPost {
+			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var note Note
+		err := json.NewDecoder(r.Body).Decode(&note)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		_, err = db.Exec("INSERT INTO note (title, contents, category, important, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())",
+			note.Title, note.Contents, note.Category, note.Important)
+		if err != nil {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Update Note</title>
+    <title>Register Note</title>
     <style>
         form {
             width: 300px;
@@ -24,50 +24,56 @@
             border: none;
             border-radius: 4px;
         }
-        .delete-btn {
-            background-color: #f44336; /* Red background */
-            margin-left: 10px; /* Add space between buttons */
-        }
     </style>
 </head>
 <body>
-    <h1>Update Note</h1>
-    <form id="update-form" method="POST" action="/update">
-        <input type="hidden" id="id" name="id" value="{{.ID}}">
+    <h1>Register Note</h1>
+    <form id="register-form">
         <label for="title">Title</label>
-        <input type="text" id="title" name="title" value="{{.Title}}">
+        <input type="text" id="title" name="title">
 
         <label for="contents">Contents</label>
-        <textarea id="contents" name="contents">{{.Contents}}</textarea>
+        <textarea id="contents" name="contents"></textarea>
 
         <label for="category">Category</label>
-        <input type="text" id="category" name="category" value="{{.Category}}">
+        <input type="text" id="category" name="category">
 
         <label for="important">Important</label>
-        <input type="checkbox" id="important" name="important" {{if .Important}}checked{{end}}>
+        <input type="checkbox" id="important" name="important">
 
-        <button type="submit">Update</button>
-        <button type="button" class="delete-btn" onclick="deleteNote()">Delete</button>
+        <button type="submit">Register</button>
     </form>
 
     <script>
-        function deleteNote() {
-            var id = document.getElementById('id').value;
-            fetch('/delete', {
+        document.getElementById('register-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            var title = document.getElementById('title').value;
+            var contents = document.getElementById('contents').value;
+            var category = document.getElementById('category').value;
+            var important = document.getElementById('important').checked;
+
+            var data = {
+                title: title,
+                contents: contents,
+                category: category,
+                important: important
+            };
+
+            fetch('/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: id })
+                body: JSON.stringify(data)
             })
             .then(() => {
-                window.location.href = '/'; // Redirect to home page after deletion
+                window.location.href = '/'; // Redirect to home page after registration
             })
             .catch((error) => {
-                console.error('Error:', error);
                 window.location.href = '/'; // Redirect to home page on error
             });
-        }
+        });
     </script>
 </body>
 </html>
