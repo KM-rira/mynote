@@ -184,9 +184,9 @@ func main() {
 			return
 		}
 
-		_, err = db.Exec("DELETE FROM note WHERE id = ?", requestData.ID)
-		if err != nil {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+		result := gormDb.Delete(&Note{}, requestData.ID)
+		if result.Error != nil {
+			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
 			return
 		}
 
