@@ -2,33 +2,77 @@ package main
 
 import (
 	"log"
-	"mynote/internal/database"
-	"mynote/internal/handlers"
-	"net/http"
 
-	_ "github.com/go-sql-driver/mysql"
+	"mynote/internal/handlers"
+	"mynote/internal/model"
+
+	"github.com/labstack/echo/v4"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 func main() {
-
-	db, err := database.InitDB()
+	// GORM を用いて SQLite データベースに接続（存在しない場合は新規作成）
+	db, err := gorm.Open(sqlite.Open("mynote.db"), &gorm.Config{})
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v\n", err)
+		log.Fatalf("failed to connect database: %v", err)
 	}
 
-	// ハンドラの初期化
-	handler := handlers.NewHandler(db.DB)
+	// モデルに基づく自動マイグレーションでテーブルを作成
+	err = db.AutoMigrate(&model.Note{})
+	if err != nil {
+		log.Fatalf("failed to migrate database: %v", err)
+	}
+
+	// サンプルデータの挿入（存在しない場合にのみ追加）
+	notes := []model.Note{
+		{Title: "Sample Note 1", Contents: "This is the content of sample note 1", Category: "General", Important: true},
+		{Title: "Sample Note 2", Contents: "This is the content of sample note 2", Category: "Work", Important: false},
+		{Title: "Sample Note 3", Contents: "This is the content of sample note 3", Category: "Personal", Important: true},
+		{Title: "サンプルデータ4です。", Contents: "こんにちは", Category: "テスト", Important: true},
+	}
+
+	for _, note := range notes {
+		err = db.FirstOrCreate(&note, model.Note{Title: note.Title}).Error
+		if err != nil {
+			log.Fatalf("Failed to insert sample data: %v", err)
+		}
+	}
+
+	// Handler インスタンスの生成
+	h := handlers.NewHandler(db)
+	// Echo インスタンスの作成
+	e := echo.New()
 
 	// ルートの定義
-	http.HandleFunc("/", handler.Index)
-	http.HandleFunc("/register-form", handler.RegisterForm)
-	http.HandleFunc("/register", handler.Register)
-	http.HandleFunc("/select", handler.Select)
-	http.HandleFunc("/update", handler.Update)
-	http.HandleFunc("/delete", handler.Delete)
+	e.GET("/", func(c echo.Context) error {
+		h.Index(c.Response().Writer, c.Request())
+		return nil
+	})
+	// 他のルートも同様に設定
+	e.GET("/register-form", func(c echo.Context) error {
+		h.RegisterForm(c.Response().Writer, c.Request())
+		return nil
+	})
+	e.Any("/register", func(c echo.Context) error {
+		h.Register(c.Response().Writer, c.Request())
+		return nil
+	})
+	e.GET("/select", func(c echo.Context) error {
+		h.Select(c.Response().Writer, c.Request())
+		return nil
+	})
+	e.Any("/update", func(c echo.Context) error {
+		h.Update(c.Response().Writer, c.Request())
+		return nil
+	})
+	e.Any("/delete", func(c echo.Context) error {
+		h.Delete(c.Response().Writer, c.Request())
+		return nil
+	})
 
-	log.Println("Server is running on port 8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	log.Println("Server is running on port 9999")
+	if err := e.Start(":9999"); err != nil {
 		log.Fatalf("Could not start server: %s", err.Error())
 	}
 }

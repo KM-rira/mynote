@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strconv"
 
-	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -25,7 +24,7 @@ func NewHandler(db *gorm.DB) *Handler {
 func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 	// Indexハンドラの実装
 	log.Println("/ Received request")
-	tmplIndex := template.Must(template.ParseFiles(filepath.Join("templates", "index.html")))
+	tmplIndex := template.Must(template.ParseFiles(filepath.Join("internal", "templates", "index.html")))
 
 	var notes []model.Note
 	result := h.db.Order("updated_at DESC").Find(&notes)
@@ -52,7 +51,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) RegisterForm(w http.ResponseWriter, r *http.Request) {
 	// RegisterFormハンドラの実装
 	log.Println("/register-form Received request")
-	tmplRegister := template.Must(template.ParseFiles(filepath.Join("templates", "register.html")))
+	tmplRegister := template.Must(template.ParseFiles(filepath.Join("internal", "templates", "register.html")))
 	tmplRegister.Execute(w, nil)
 }
 
@@ -83,7 +82,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Select(w http.ResponseWriter, r *http.Request) {
 	// Selectハンドラの実装
 	log.Println("/select Received request")
-	tmplUpdate := template.Must(template.ParseFiles(filepath.Join("templates", "update.html")))
+	tmplUpdate := template.Must(template.ParseFiles(filepath.Join("internal", "templates", "update.html")))
 	id := r.URL.Query().Get("id")
 
 	var note model.Note
