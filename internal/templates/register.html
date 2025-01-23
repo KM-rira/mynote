@@ -14,7 +14,10 @@
             margin-bottom: 10px;
         }
         textarea {
-            height: 200px; /* Increase the default height */
+            min-height: 500px; /* 最小高さを指定 */
+            width: 200%;
+            resize: both; /* ユーザーが自由にサイズを変更可能 */
+            box-sizing: border-box; /* パディングを含めたサイズ計算 */
         }
         button {
             padding: 10px 20px;
@@ -27,7 +30,7 @@
     </style>
 </head>
 <body>
-        <h1><a href="/" style="text-decoration: none; color: black;">Register Note</a></h1>
+    <h1><a href="/" style="text-decoration: none; color: black;">Register Note</a></h1>
     <form id="register-form">
         <label for="title">Title</label>
         <input type="text" id="title" name="title">
