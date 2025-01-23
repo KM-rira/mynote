@@ -3,31 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Register Note</title>
-    <style>
-        form {
-            width: 300px;
-            margin: 0 auto;
-        }
-        label, input, textarea {
-            display: block;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-        textarea {
-            min-height: 500px; /* 最小高さを指定 */
-            width: 200%;
-            resize: both; /* ユーザーが自由にサイズを変更可能 */
-            box-sizing: border-box; /* パディングを含めたサイズ計算 */
-        }
-        button {
-            padding: 10px 20px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/register.css">
 </head>
 <body>
     <h1><a href="/" style="text-decoration: none; color: black;">Register Note</a></h1>
@@ -47,36 +23,6 @@
         <button type="submit">Register</button>
     </form>
 
-    <script>
-        document.getElementById('register-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            var title = document.getElementById('title').value;
-            var contents = document.getElementById('contents').value;
-            var category = document.getElementById('category').value;
-            var important = document.getElementById('important').checked;
-
-            var data = {
-                title: title,
-                contents: contents,
-                category: category,
-                important: important
-            };
-
-            fetch('/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(() => {
-                window.location.href = '/'; // Redirect to home page after registration
-            })
-            .catch((error) => {
-                window.location.href = '/'; // Redirect to home page on error
-            });
-        });
-    </script>
+    <script src="/js/register.js"></script>
 </body>
 </html>

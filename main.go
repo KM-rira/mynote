@@ -44,6 +44,10 @@ func main() {
 	// Echo インスタンスの作成
 	e := echo.New()
 
+	// 静的ファイルの提供設定
+	e.Static("/css", "internal/templates/css")
+	e.Static("/js", "internal/templates/js")
+
 	// ルートの定義
 	e.GET("/", func(c echo.Context) error {
 		h.Index(c.Response().Writer, c.Request())
