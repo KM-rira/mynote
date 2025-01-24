@@ -33,23 +33,8 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ノートデータをJSON形式に変換
-	notesJSON, err := json.Marshal(notes)
-	if err != nil {
-		log.Errorf("JSONエンコードエラー: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	// テンプレートに渡すデータ構造
-	data := struct {
-		NotesJSON string
-	}{
-		NotesJSON: string(notesJSON), // JSONデータを文字列として埋め込む
-	}
-
-	// テンプレートをレンダリング
-	if err := tmpl.Execute(w, data); err != nil {
+	// スライスをそのままテンプレートに渡す
+	if err := tmpl.Execute(w, notes); err != nil {
 		log.Errorf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}

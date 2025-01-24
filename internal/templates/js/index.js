@@ -1,126 +1,70 @@
-function sortTable(n) {
-    var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-    table = document.querySelector("table");
-    switching = true;
-    dir = "asc";
-    while (switching) {
-        switching = false;
-        rows = table.rows;
-        for (i = 1; i < (rows.length - 1); i++) {
-            shouldSwitch = false;
-            x = rows[i].getElementsByTagName("TD")[n];
-            y = rows[i + 1].getElementsByTagName("TD")[n];
-            if (dir == "asc") {
-                if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-                    shouldSwitch = true;
-                    break;
-                }
-            } else if (dir == "desc") {
-                if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-                    shouldSwitch = true;
-                    break;
-                }
+document.addEventListener('DOMContentLoaded', () => {
+    // JSONデータを取得
+    const notesJSON = document.getElementById('notes-data').textContent;
+    const notes = JSON.parse(notesJSON); // JSON文字列をオブジェクトに変換
+    const tbody = document.getElementById('notes-body');
+
+    if (notes.length === 0) {
+        const noDataRow = document.createElement('tr');
+        const noDataCell = document.createElement('td');
+        noDataCell.colSpan = 8;
+        noDataCell.textContent = "No notes found.";
+        noDataRow.appendChild(noDataCell);
+        tbody.appendChild(noDataRow);
+    } else {
+        notes.forEach(note => {
+            const row = document.createElement('tr');
+
+            // Selectボタン
+            const selectCell = document.createElement('td');
+            const selectButton = document.createElement('button');
+            selectButton.textContent = "Select";
+            selectButton.onclick = () => alert(`Selected Note ID: ${note.ID}`);
+            selectCell.appendChild(selectButton);
+            row.appendChild(selectCell);
+
+            // ID
+            const idCell = document.createElement('td');
+            idCell.textContent = note.ID;
+            row.appendChild(idCell);
+
+            // Title
+            const titleCell = document.createElement('td');
+            titleCell.textContent = note.title;
+            row.appendChild(titleCell);
+
+            // Contents
+            const contentsCell = document.createElement('td');
+            contentsCell.textContent = note.contents;
+            row.appendChild(contentsCell);
+
+            // Category
+            const categoryCell = document.createElement('td');
+            categoryCell.textContent = note.category;
+            row.appendChild(categoryCell);
+
+            // Important
+            const importantCell = document.createElement('td');
+            const importantCheckbox = document.createElement('input');
+            importantCheckbox.type = "checkbox";
+            importantCheckbox.disabled = true;
+            if (note.important) {
+                importantCheckbox.checked = true;
             }
-        }
-        if (shouldSwitch) {
-            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-            switching = true;
-            switchcount++;
-        } else {
-            if (switchcount == 0 && dir == "asc") {
-                dir = "desc";
-                switching = true;
-            }
-        }
+            importantCell.appendChild(importantCheckbox);
+            row.appendChild(importantCell);
+
+            // Created At
+            const createdAtCell = document.createElement('td');
+            createdAtCell.textContent = new Date(note.createdAt).toLocaleString();
+            row.appendChild(createdAtCell);
+
+            // Updated At
+            const updatedAtCell = document.createElement('td');
+            updatedAtCell.textContent = new Date(note.updatedAt).toLocaleString();
+            row.appendChild(updatedAtCell);
+
+            tbody.appendChild(row);
+        });
     }
-}
-
-function sortImportant() {
-    var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-    table = document.querySelector("table");
-    switching = true;
-    dir = "asc";
-    while (switching) {
-        switching = false;
-        rows = table.rows;
-        for (i = 1; i < (rows.length - 1); i++) {
-            shouldSwitch = false;
-            x = rows[i].getElementsByTagName("TD")[5].getElementsByTagName("input")[0];
-            y = rows[i + 1].getElementsByTagName("TD")[5].getElementsByTagName("input")[0];
-            if (dir == "asc") {
-                if (x.checked > y.checked) {
-                    shouldSwitch = true;
-                    break;
-                }
-            } else if (dir == "desc") {
-                if (x.checked < y.checked) {
-                    shouldSwitch = true;
-                    break;
-                }
-            }
-        }
-        if (shouldSwitch) {
-            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-            switching = true;
-            switchcount++;
-        } else {
-            if (switchcount == 0 && dir == "asc") {
-                dir = "desc";
-                switching = true;
-            }
-        }
-    }
-}
-
-function sortDate(n) {
-    var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-    table = document.querySelector("table");
-    switching = true;
-    dir = "asc";
-    while (switching) {
-        switching = false;
-        rows = table.rows;
-        for (i = 1; i < (rows.length - 1); i++) {
-            shouldSwitch = false;
-            x = new Date(rows[i].getElementsByTagName("TD")[n].innerHTML);
-            y = new Date(rows[i + 1].getElementsByTagName("TD")[n].innerHTML);
-            if (dir == "asc") {
-                if (x > y) {
-                    shouldSwitch = true;
-                    break;
-                }
-            } else if (dir == "desc") {
-                if (x < y) {
-                    shouldSwitch = true;
-                    break;
-                }
-            }
-        }
-        if (shouldSwitch) {
-            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-            switching = true;
-            switchcount++;
-        } else {
-            if (switchcount == 0 && dir == "asc") {
-                dir = "desc";
-                switching = true;
-            }
-        }
-    }
-}
-
-function selectRow(id) {
-    window.location.href = '/select?id=' + id;
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('td[id^="contents-"]').forEach(function(td) {
-        var text = td.innerText;
-        var urlPattern = /https?:\/\/[^\s]+/g;
-        if (urlPattern.test(text)) {
-            td.innerHTML = text.replace(urlPattern, function(url) {
-                return '<a href="' + url + '" target="_blank" class="link">' + url + '</a>';
-            });
-        }
-    });
 });
