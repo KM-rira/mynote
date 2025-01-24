@@ -1,17 +1,39 @@
 package main
 
 import (
-	"log"
+	"os"
 
 	"mynote/internal/handlers"
 	"mynote/internal/model"
 
 	"github.com/labstack/echo/v4"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
+func initLogger() {
+	// app.logファイルを開く（存在しない場合は作成）
+	file, err := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("ファイルを開けませんでした: %v", err)
+	}
+
+	// logrusの出力先をファイルに設定
+	log.SetOutput(file)
+
+	// ログフォーマットの設定（オプション）
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
+
+	// ログレベルの設定（必要に応じて変更）
+	log.SetLevel(log.InfoLevel)
+}
+
 func main() {
+	initLogger()
+
 	// GORM を用いて SQLite データベースに接続（存在しない場合は新規作成）
 	db, err := gorm.Open(sqlite.Open("mynote.db"), &gorm.Config{})
 	if err != nil {

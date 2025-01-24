@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
-	"log"
 	"mynote/internal/model"
 	"net/http"
 	"path/filepath"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 
 	"gorm.io/gorm"
 )
@@ -22,29 +22,36 @@ func NewHandler(db *gorm.DB) *Handler {
 }
 
 func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
-	// Indexハンドラの実装
-	log.Println("/ Received request")
-	tmplIndex := template.Must(template.ParseFiles(filepath.Join("internal", "templates", "index.html")))
+	// テンプレートの準備
+	tmpl := template.Must(template.ParseFiles(filepath.Join("internal", "templates", "index.html")))
 
+	// データベースからノートを取得
 	var notes []model.Note
 	result := h.db.Order("updated_at DESC").Find(&notes)
 	if result.Error != nil {
-		http.Error(w, result.Error.Error(), http.StatusInsufficientStorage)
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if result.RowsAffected == 0 {
-		fmt.Fprintln(w, "No note record")
-		return
-	}
-
-	// Render the template with notes
-	log.Printf("Rendering template with notes: %+v", notes)
-	err := tmplIndex.Execute(w, notes)
+	// ノートデータをJSON形式に変換
+	notesJSON, err := json.Marshal(notes)
 	if err != nil {
-		log.Printf("Error rendering template: %s", err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Errorf("JSONエンコードエラー: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
+	}
+
+	// テンプレートに渡すデータ構造
+	data := struct {
+		NotesJSON string
+	}{
+		NotesJSON: string(notesJSON), // JSONデータを文字列として埋め込む
+	}
+
+	// テンプレートをレンダリング
+	if err := tmpl.Execute(w, data); err != nil {
+		log.Errorf("テンプレートレンダリングエラー: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
