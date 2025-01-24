@@ -16,6 +16,15 @@ import (
 type Handler struct {
 	db *gorm.DB
 }
+type NoteResponse struct {
+	ID        int    `json:"id"`
+	Title     string `json:"title"`
+	Contents  string `json:"contents"`
+	Category  string `json:"category"`
+	Important bool   `json:"important"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
 
 func NewHandler(db *gorm.DB) *Handler {
 	return &Handler{db: db}
@@ -33,8 +42,22 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// ノートデータをフォーマット済みの構造体に変換
+	var formattedNotes []NoteResponse
+	for _, note := range notes {
+		formattedNotes = append(formattedNotes, NoteResponse{
+			ID:        note.ID,
+			Title:     note.Title,
+			Contents:  note.Contents,
+			Category:  note.Category,
+			Important: note.Important,
+			CreatedAt: note.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: note.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
 	// スライスをそのままテンプレートに渡す
-	if err := tmpl.Execute(w, notes); err != nil {
+	if err := tmpl.Execute(w, formattedNotes); err != nil {
 		log.Errorf("テンプレートレンダリングエラー: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
